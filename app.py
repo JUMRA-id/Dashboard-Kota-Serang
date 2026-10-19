@@ -4,19 +4,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 st.set_page_config(
-    page_title="Fiscal Insight | Kota Serang",
+    page_title="Dashboard Kota Serang",
     page_icon="🏙️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-URL_DATA = "https://raw.githubusercontent.com/JUMRA-id/Dasboard-Fiscal-Insight-/e6244a0e8ff62982d669f7b07b461cd28c3b5a3b/dataset_fiskal_97_hipoFull%20(2).csv"
+URL_DATA = "https://raw.githubusercontent.com/JUMRA-id/Dashboard-Kota-Serang/8569ca8be3dab3b794ac46862ad5846df906c90c/dataset_fiskal_97_hipoFull.csv"
 
-WARNA_UTAMA = "#1D4ED8"
-WARNA_HIJAU = "#059669"
-WARNA_MERAH = "#DC2626"
-WARNA_KUNING = "#D97706"
-WARNA_UNGU = "#7C3AED"
+BIRU = "#2563EB"
+HIJAU = "#059669"
+MERAH = "#DC2626"
+KUNING = "#D97706"
+UNGU = "#7C3AED"
 
 @st.cache_data
 def load_data():
@@ -32,26 +32,22 @@ if df_serang.empty:
     st.error("Data Kota Serang tidak ditemukan. Periksa penulisan nama kota pada kolom 'Kota'.")
     st.stop()
 
-# CSS agar tampilan lebih menarik
+# Tampilan CSS
 st.markdown("""
 <style>
-    .main {
-        background-color: #F8FAFC;
-    }
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
     }
-    h1 {
+    h1, h2, h3 {
         color: #0F172A;
-        font-weight: 800;
     }
     .stMetric {
-        background: white;
-        border-radius: 15px;
+        background-color: #FFFFFF;
+        border-radius: 16px;
         padding: 18px;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-        border-left: 6px solid #1D4ED8;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+        border-left: 6px solid #2563EB;
     }
     .stMetric label {
         color: #64748B;
@@ -61,37 +57,42 @@ st.markdown("""
         color: #0F172A;
         font-weight: 800;
     }
-    div[data-testid="stDataFrame"] {
-        border-radius: 12px;
-        overflow: hidden;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # Sidebar
-tahun_min = int(df_serang["Tahun"].min())
-tahun_max = int(df_serang["Tahun"].max())
-
 with st.sidebar:
-    st.markdown("## 🏙️ Fiscal Insight")
-    st.caption("Dashboard Fiskal Kota Serang")
+    st.markdown("## 🏙️ Dashboard Kota Serang")
+    st.caption("Fiscal & Social Insight")
 
     st.divider()
 
-    st.markdown("### ⚙️ Filter")
+    menu = st.radio(
+        "Pilih halaman yang ingin dilihat:",
+        [
+            "🏠 Ringkasan Kota Serang",
+            "💰 Pendapatan Fiskal",
+            "🏗️ Belanja Pembangunan",
+            "👥 Kondisi Sosial",
+            "📊 Data & Statistik"
+        ]
+    )
+
+    st.divider()
+
+    st.markdown("### ⚙️ Filter Tahun")
+    tahun_min = int(df_serang["Tahun"].min())
+    tahun_max = int(df_serang["Tahun"].max())
+
     tahun_awal, tahun_akhir = st.slider(
-        "Pilih rentang tahun",
+        "Rentang tahun",
         min_value=tahun_min,
         max_value=tahun_max,
         value=(tahun_min, tahun_max)
     )
 
     st.divider()
-    st.markdown("### 📌 Tentang")
-    st.info(
-        "Dashboard ini menampilkan perkembangan pendapatan fiskal, "
-        "belanja pembangunan, dan indikator sosial Kota Serang."
-    )
+    st.info("Dashboard ini menampilkan data khusus Kota Serang.")
 
 df_filter = df_serang[
     (df_serang["Tahun"] >= tahun_awal) &
@@ -104,207 +105,253 @@ data_terakhir = df_filter[df_filter["Tahun"] == tahun_terakhir].iloc[0]
 # Header
 st.markdown(f"""
 <div style="
-    background: linear-gradient(135deg, #1D4ED8, #7C3AED);
-    padding: 28px;
-    border-radius: 20px;
+    background: linear-gradient(135deg, #2563EB, #7C3AED);
+    padding: 30px;
+    border-radius: 22px;
     color: white;
     margin-bottom: 25px;
 ">
-    <h1 style="color:white; margin:0;">🏙️ Fiscal Insight Kota Serang</h1>
+    <h1 style="color:white; margin:0;">🏙️ Dashboard Kota Serang</h1>
     <p style="margin:8px 0 0 0; font-size:17px; opacity:0.9;">
-        Analisis fiskal daerah, belanja pembangunan, dan kondisi sosial
+        Analisis fiskal daerah, belanja pembangunan, dan kondisi sosial Kota Serang
     </p>
     <p style="margin:10px 0 0 0; font-size:14px; opacity:0.8;">
-        Periode data: {tahun_min}–{tahun_max} | Tampil saat ini: {tahun_awal}–{tahun_akhir}
+        Data tersedia: {tahun_min}–{tahun_max} | Filter aktif: {tahun_awal}–{tahun_akhir}
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-# KPI utama
-st.markdown("### 📌 Ringkasan Utama")
+# ================= HALAMAN RINGKASAN =================
+if menu == "🏠 Ringkasan Kota Serang":
 
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+    st.markdown("### 📌 Ringkasan Utama")
 
-col1.metric("💰 PAD", f"{data_terakhir['PAD']:.2f}")
-col2.metric("🏛️ DAU", f"{data_terakhir['DAU_Grant']:.2f}")
-col3.metric("🏗️ DAK Fisik", f"{data_terakhir['DAK_Fisik']:.2f}")
-col4.metric("📉 Kemiskinan", f"{data_terakhir['KEMISKINAN']:.2f}%")
-col5.metric("👷 Pengangguran", f"{data_terakhir['PENGANGGURAN']:.2f}%")
-col6.metric("🎓 IPM", f"{data_terakhir['IPM']:.2f}")
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-st.caption(f"Indikator di atas menunjukkan kondisi Kota Serang pada tahun {tahun_terakhir}.")
+    col1.metric("💰 PAD", f"{data_terakhir['PAD']:.2f}")
+    col2.metric("🏛️ DAU", f"{data_terakhir['DAU_Grant']:.2f}")
+    col3.metric("🏗️ DAK Fisik", f"{data_terakhir['DAK_Fisik']:.2f}")
+    col4.metric("📉 Kemiskinan", f"{data_terakhir['KEMISKINAN']:.2f}%")
+    col5.metric("👷 Pengangguran", f"{data_terakhir['PENGANGGURAN']:.2f}%")
+    col6.metric("🎓 IPM", f"{data_terakhir['IPM']:.2f}")
 
-# Tren fiskal
-st.markdown("### 💰 Tren Pendapatan Fiskal Daerah")
+    st.caption(f"Indikator di atas menunjukkan kondisi Kota Serang pada tahun {tahun_terakhir}.")
 
-fig, ax = plt.subplots(figsize=(12, 5))
+    col1, col2 = st.columns(2)
 
-ax.plot(df_filter["Tahun"], df_filter["PAD"], marker="o", linewidth=2.5, color=WARNA_UTAMA, label="PAD")
-ax.plot(df_filter["Tahun"], df_filter["DAU_Grant"], marker="o", linewidth=2.5, color=WARNA_HIJAU, label="DAU")
-ax.plot(df_filter["Tahun"], df_filter["DAK_Fisik"], marker="o", linewidth=2.5, color=WARNA_KUNING, label="DAK Fisik")
-ax.plot(df_filter["Tahun"], df_filter["DAK_Nonfisik"], marker="o", linewidth=2.5, color=WARNA_UNGU, label="DAK Nonfisik")
-ax.plot(df_filter["Tahun"], df_filter["DBH_PAJAK"], marker="o", linewidth=2.5, color=WARNA_MERAH, label="DBH Pajak")
+    with col1:
+        st.markdown("#### 💰 Pendapatan Fiskal")
 
-ax.set_title("Perkembangan Pendapatan Fiskal Kota Serang", fontsize=14, fontweight="bold")
-ax.set_xlabel("Tahun")
-ax.set_ylabel("Nilai")
-ax.legend(frameon=False)
-ax.grid(True, linestyle="--", alpha=0.3)
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
+        fig, ax = plt.subplots(figsize=(8, 4))
 
-st.pyplot(fig, use_container_width=True)
+        ax.plot(df_filter["Tahun"], df_filter["PAD"], marker="o", linewidth=2.5, color=BIRU, label="PAD")
+        ax.plot(df_filter["Tahun"], df_filter["DAU_Grant"], marker="o", linewidth=2.5, color=HIJAU, label="DAU")
+        ax.plot(df_filter["Tahun"], df_filter["DAK_Fisik"], marker="o", linewidth=2.5, color=KUNING, label="DAK Fisik")
 
-# Komposisi transfer dan belanja
-st.markdown("### 🏦 Komposisi Dana Transfer Tahun Terakhir")
+        ax.set_title("Tren Pendapatan Fiskal", fontsize=13, fontweight="bold")
+        ax.set_xlabel("Tahun")
+        ax.set_ylabel("Nilai")
+        ax.legend(frameon=False)
+        ax.grid(True, linestyle="--", alpha=0.3)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
 
-kolom_transfer = [
-    "DBH_PAJAK", "DBH_SDA", "DBH_Lainnya",
-    "DAU_Grant", "DAU_Earmark",
-    "DAK_Fisik", "DAK_Nonfisik"
-]
+        st.pyplot(fig, use_container_width=True)
 
-nilai_transfer = data_terakhir[kolom_transfer].astype(float)
+    with col2:
+        st.markdown("#### 👥 Kondisi Sosial")
 
-fig2, ax2 = plt.subplots(figsize=(11, 5))
+        fig2, ax2 = plt.subplots(figsize=(8, 4))
 
-bars = ax2.bar(kolom_transfer, nilai_transfer, color=WARNA_UTAMA, alpha=0.85)
-ax2.set_title(f"Komposisi Dana Transfer Kota Serang Tahun {tahun_terakhir}", fontsize=14, fontweight="bold")
-ax2.set_ylabel("Nilai")
-ax2.tick_params(axis="x", rotation=45)
-ax2.grid(axis="y", linestyle="--", alpha=0.3)
-ax2.spines["top"].set_visible(False)
-ax2.spines["right"].set_visible(False)
+        ax2.plot(df_filter["Tahun"], df_filter["KEMISKINAN"], marker="o", linewidth=2.5, color=MERAH, label="Kemiskinan (%)")
+        ax2.plot(df_filter["Tahun"], df_filter["PENGANGGURAN"], marker="o", linewidth=2.5, color=KUNING, label="Pengangguran (%)")
+        ax2.plot(df_filter["Tahun"], df_filter["IPM"], marker="o", linewidth=2.5, color=HIJAU, label="IPM")
 
-for bar in bars:
-    tinggi = bar.get_height()
-    ax2.text(
-        bar.get_x() + bar.get_width() / 2,
-        tinggi,
-        f"{tinggi:.1f}",
-        ha="center",
-        va="bottom",
-        fontsize=9
-    )
+        ax2.set_title("Tren Indikator Sosial", fontsize=13, fontweight="bold")
+        ax2.set_xlabel("Tahun")
+        ax2.set_ylabel("Nilai")
+        ax2.legend(frameon=False)
+        ax2.grid(True, linestyle="--", alpha=0.3)
+        ax2.spines["top"].set_visible(False)
+        ax2.spines["right"].set_visible(False)
 
-st.pyplot(fig2, use_container_width=True)
+        st.pyplot(fig2, use_container_width=True)
 
-# Belanja pembangunan
-st.markdown("### 🏗️ Belanja Pembangunan")
+# ================= HALAMAN PENDAPATAN =================
+elif menu == "💰 Pendapatan Fiskal":
 
-kolom_belanja = [
-    "bm_pendidikan", "bm_kesehatan", "bm_perumahan",
-    "bm_lingkungan", "bm_ekonomi", "bm_infrastruktur",
-    "bm_pariwisata", "bm_perlindungan_sosial"
-]
+    st.markdown("### 💰 Analisis Pendapatan Fiskal Daerah")
 
-pilihan_belanja = st.multiselect(
-    "Pilih indikator belanja yang ingin ditampilkan",
-    kolom_belanja,
-    default=[
-        "bm_pendidikan",
-        "bm_kesehatan",
-        "bm_infrastruktur",
-        "bm_ekonomi"
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    ax.plot(df_filter["Tahun"], df_filter["PAD"], marker="o", linewidth=2.5, color=BIRU, label="PAD")
+    ax.plot(df_filter["Tahun"], df_filter["DAU_Grant"], marker="o", linewidth=2.5, color=HIJAU, label="DAU")
+    ax.plot(df_filter["Tahun"], df_filter["DAK_Fisik"], marker="o", linewidth=2.5, color=KUNING, label="DAK Fisik")
+    ax.plot(df_filter["Tahun"], df_filter["DAK_Nonfisik"], marker="o", linewidth=2.5, color=UNGU, label="DAK Nonfisik")
+    ax.plot(df_filter["Tahun"], df_filter["DBH_PAJAK"], marker="o", linewidth=2.5, color=MERAH, label="DBH Pajak")
+
+    ax.set_title("Tren Pendapatan Fiskal Kota Serang", fontsize=14, fontweight="bold")
+    ax.set_xlabel("Tahun")
+    ax.set_ylabel("Nilai")
+    ax.legend(frameon=False)
+    ax.grid(True, linestyle="--", alpha=0.3)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    st.pyplot(fig, use_container_width=True)
+
+    st.markdown("#### 🏦 Komposisi Dana Transfer")
+
+    kolom_transfer = [
+        "DBH_PAJAK", "DBH_SDA", "DBH_Lainnya",
+        "DAU_Grant", "DAU_Earmark",
+        "DAK_Fisik", "DAK_Nonfisik"
     ]
-)
 
-if pilihan_belanja:
-    fig3, ax3 = plt.subplots(figsize=(12, 5))
+    nilai_transfer = data_terakhir[kolom_transfer].astype(float)
 
-    warna_grafik = [WARNA_UTAMA, WARNA_HIJAU, WARNA_MERAH, WARNA_KUNING, WARNA_UNGU]
+    fig2, ax2 = plt.subplots(figsize=(11, 5))
 
-    for i, kolom in enumerate(pilihan_belanja):
-        label = kolom.replace("bm_", "").replace("_", " ").title()
-        ax3.plot(
-            df_filter["Tahun"],
-            df_filter[kolom],
-            marker="o",
-            linewidth=2.5,
-            color=warna_grafik[i % len(warna_grafik)],
-            label=label
+    bars = ax2.bar(kolom_transfer, nilai_transfer, color=BIRU, alpha=0.85)
+
+    ax2.set_title(f"Komposisi Dana Transfer Tahun {tahun_terakhir}", fontsize=14, fontweight="bold")
+    ax2.set_ylabel("Nilai")
+    ax2.tick_params(axis="x", rotation=45)
+    ax2.grid(axis="y", linestyle="--", alpha=0.3)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
+
+    for bar in bars:
+        tinggi = bar.get_height()
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2,
+            tinggi,
+            f"{tinggi:.1f}",
+            ha="center",
+            va="bottom",
+            fontsize=9
         )
 
-    ax3.set_title("Perkembangan Belanja Pembangunan Kota Serang", fontsize=14, fontweight="bold")
-    ax3.set_xlabel("Tahun")
-    ax3.set_ylabel("Nilai")
-    ax3.legend(frameon=False)
-    ax3.grid(True, linestyle="--", alpha=0.3)
-    ax3.spines["top"].set_visible(False)
-    ax3.spines["right"].set_visible(False)
+    st.pyplot(fig2, use_container_width=True)
 
-    st.pyplot(fig3, use_container_width=True)
+# ================= HALAMAN BELANJA =================
+elif menu == "🏗️ Belanja Pembangunan":
+
+    st.markdown("### 🏗️ Analisis Belanja Pembangunan")
+
+    kolom_belanja = [
+        "bm_pendidikan", "bm_kesehatan", "bm_perumahan",
+        "bm_lingkungan", "bm_ekonomi", "bm_infrastruktur",
+        "bm_pariwisata", "bm_perlindungan_sosial"
+    ]
+
+    pilihan_belanja = st.multiselect(
+        "Pilih bidang belanja yang ingin ditampilkan:",
+        kolom_belanja,
+        default=[
+            "bm_pendidikan",
+            "bm_kesehatan",
+            "bm_infrastruktur",
+            "bm_ekonomi"
+        ]
+    )
+
+    if pilihan_belanja:
+        fig3, ax3 = plt.subplots(figsize=(12, 5))
+
+        warna_grafik = [BIRU, HIJAU, MERAH, KUNING, UNGU]
+
+        for i, kolom in enumerate(pilihan_belanja):
+            label = kolom.replace("bm_", "").replace("_", " ").title()
+            ax3.plot(
+                df_filter["Tahun"],
+                df_filter[kolom],
+                marker="o",
+                linewidth=2.5,
+                color=warna_grafik[i % len(warna_grafik)],
+                label=label
+            )
+
+        ax3.set_title("Perkembangan Belanja Pembangunan Kota Serang", fontsize=14, fontweight="bold")
+        ax3.set_xlabel("Tahun")
+        ax3.set_ylabel("Nilai")
+        ax3.legend(frameon=False)
+        ax3.grid(True, linestyle="--", alpha=0.3)
+        ax3.spines["top"].set_visible(False)
+        ax3.spines["right"].set_visible(False)
+
+        st.pyplot(fig3, use_container_width=True)
+    else:
+        st.warning("Pilih minimal satu bidang belanja.")
+
+# ================= HALAMAN SOSIAL =================
+elif menu == "👥 Kondisi Sosial":
+
+    st.markdown("### 👥 Analisis Kondisi Sosial Kota Serang")
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        fig4, ax4 = plt.subplots(figsize=(10, 5))
+
+        ax4.plot(df_filter["Tahun"], df_filter["KEMISKINAN"], marker="o", linewidth=2.5, color=MERAH, label="Kemiskinan (%)")
+        ax4.plot(df_filter["Tahun"], df_filter["PENGANGGURAN"], marker="o", linewidth=2.5, color=KUNING, label="Pengangguran (%)")
+        ax4.plot(df_filter["Tahun"], df_filter["KETIMPANGAN"], marker="o", linewidth=2.5, color=UNGU, label="Ketimpangan")
+
+        ax4.set_title("Tren Indikator Sosial", fontsize=14, fontweight="bold")
+        ax4.set_xlabel("Tahun")
+        ax4.set_ylabel("Nilai")
+        ax4.legend(frameon=False)
+        ax4.grid(True, linestyle="--", alpha=0.3)
+        ax4.spines["top"].set_visible(False)
+        ax4.spines["right"].set_visible(False)
+
+        st.pyplot(fig4, use_container_width=True)
+
+    with col2:
+        fig5, ax5 = plt.subplots(figsize=(6, 5))
+
+        ax5.plot(df_filter["Tahun"], df_filter["IPM"], marker="o", linewidth=3, color=HIJAU)
+        ax5.fill_between(df_filter["Tahun"], df_filter["IPM"], alpha=0.15, color=HIJAU)
+
+        ax5.set_title("Perkembangan IPM", fontsize=14, fontweight="bold")
+        ax5.set_xlabel("Tahun")
+        ax5.set_ylabel("IPM")
+        ax5.grid(True, linestyle="--", alpha=0.3)
+        ax5.spines["top"].set_visible(False)
+        ax5.spines["right"].set_visible(False)
+
+        st.pyplot(fig5, use_container_width=True)
+
+# ================= HALAMAN DATA =================
 else:
-    st.warning("Pilih minimal satu indikator belanja.")
 
-# Kondisi sosial
-st.markdown("### 👥 Kondisi Sosial Kota Serang")
+    st.markdown("### 📊 Data dan Statistik Kota Serang")
 
-col_sosial1, col_sosial2 = st.columns([2, 1])
+    kolom_analisis = [
+        "PAD", "DAU_Grant", "DAK_Fisik",
+        "KEMISKINAN", "PENGANGGURAN", "IPM"
+    ]
 
-with col_sosial1:
-    fig4, ax4 = plt.subplots(figsize=(10, 5))
+    statistik = []
 
-    ax4.plot(df_filter["Tahun"], df_filter["KEMISKINAN"], marker="o", linewidth=2.5, color=WARNA_MERAH, label="Kemiskinan (%)")
-    ax4.plot(df_filter["Tahun"], df_filter["PENGANGGURAN"], marker="o", linewidth=2.5, color=WARNA_KUNING, label="Pengangguran (%)")
-    ax4.plot(df_filter["Tahun"], df_filter["KETIMPANGAN"], marker="o", linewidth=2.5, color=WARNA_UNGU, label="Ketimpangan")
+    for kolom in kolom_analisis:
+        nilai = df_filter[kolom].to_numpy()
 
-    ax4.set_title("Tren Indikator Sosial", fontsize=14, fontweight="bold")
-    ax4.set_xlabel("Tahun")
-    ax4.set_ylabel("Nilai")
-    ax4.legend(frameon=False)
-    ax4.grid(True, linestyle="--", alpha=0.3)
-    ax4.spines["top"].set_visible(False)
-    ax4.spines["right"].set_visible(False)
+        statistik.append({
+            "Indikator": kolom,
+            "Rata-rata": round(np.mean(nilai), 2),
+            "Median": round(np.median(nilai), 2),
+            "Minimum": round(np.min(nilai), 2),
+            "Maksimum": round(np.max(nilai), 2),
+            "Standar Deviasi": round(np.std(nilai), 2)
+        })
 
-    st.pyplot(fig4, use_container_width=True)
+    st.markdown("#### 🧮 Statistik Deskriptif")
+    st.dataframe(pd.DataFrame(statistik), use_container_width=True, hide_index=True)
 
-with col_sosial2:
-    fig5, ax5 = plt.subplots(figsize=(6, 5))
-
-    ax5.plot(df_filter["Tahun"], df_filter["IPM"], marker="o", linewidth=3, color=WARNA_HIJAU)
-    ax5.fill_between(df_filter["Tahun"], df_filter["IPM"], alpha=0.15, color=WARNA_HIJAU)
-
-    ax5.set_title("Perkembangan IPM", fontsize=14, fontweight="bold")
-    ax5.set_xlabel("Tahun")
-    ax5.set_ylabel("IPM")
-    ax5.grid(True, linestyle="--", alpha=0.3)
-    ax5.spines["top"].set_visible(False)
-    ax5.spines["right"].set_visible(False)
-
-    st.pyplot(fig5, use_container_width=True)
-
-# Statistik deskriptif
-st.markdown("### 🧮 Statistik Deskriptif")
-
-kolom_analisis = [
-    "PAD", "DAU_Grant", "DAK_Fisik",
-    "KEMISKINAN", "PENGANGGURAN", "IPM"
-]
-
-statistik = []
-
-for kolom in kolom_analisis:
-    nilai = df_filter[kolom].to_numpy()
-
-    statistik.append({
-        "Indikator": kolom,
-        "Rata-rata": round(np.mean(nilai), 2),
-        "Median": round(np.median(nilai), 2),
-        "Minimum": round(np.min(nilai), 2),
-        "Maksimum": round(np.max(nilai), 2),
-        "Standar Deviasi": round(np.std(nilai), 2)
-    })
-
-st.dataframe(
-    pd.DataFrame(statistik),
-    use_container_width=True,
-    hide_index=True
-)
-
-# Tabel data
-with st.expander("📋 Lihat Data Kota Serang"):
+    st.markdown("#### 📋 Data Lengkap")
     st.dataframe(df_filter, use_container_width=True)
 
 st.divider()
-st.caption("Sumber data: dataset_fiskal_97_hipoFull (2).csv dari GitHub JUMRA-id/Dasboard-Fiscal-Insight-. Dibuat menggunakan Streamlit, Pandas, NumPy, dan Matplotlib.")
+st.caption("Sumber data: dataset_fiskal_97_hipoFull.csv dari GitHub JUMRA-id/Dashboard-Kota-Serang. Dibuat menggunakan Streamlit, Pandas, NumPy, dan Matplotlib.")
