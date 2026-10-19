@@ -93,7 +93,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.info("Dashboard ini menampilkan data khusus Kota Serang beserta interpretasi hasilnya.")
+    st.info("Dashboard ini menampilkan data khusus Kota Serang beserta interpretasi dan cara perhitungannya.")
 
 df_filter = df_serang[
     (df_serang["Tahun"] >= tahun_awal) &
@@ -122,7 +122,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Fungsi interpretasi arah tren
+# Fungsi interpretasi beserta cara perhitungan
 def interpretasi_tren(kolom, arah_naik_baik=True):
     nilai = df_filter[kolom].to_numpy()
 
@@ -131,27 +131,68 @@ def interpretasi_tren(kolom, arah_naik_baik=True):
 
     awal = nilai[0]
     akhir = nilai[-1]
-    perubahan = akhir - awal
+    selisih = akhir - awal
 
-    if perubahan > 0:
+    if awal != 0:
+        persentase = (selisih / awal) * 100
+    else:
+        persentase = 0
+
+    if selisih > 0:
         arah = "meningkat"
-    elif perubahan < 0:
+    elif selisih < 0:
         arah = "menurun"
     else:
         arah = "relatif stabil"
 
     if arah == "relatif stabil":
-        return f"Nilai {kolom} relatif stabil selama periode {tahun_awal}–{tahun_akhir}."
-
-    if arah_naik_baik:
-        kesimpulan = "hal yang positif" if perubahan > 0 else "hal yang perlu diperhatikan"
+        kesimpulan = "kondisi yang relatif stabil"
+    elif arah_naik_baik:
+        kesimpulan = "hal yang positif" if selisih > 0 else "hal yang perlu diperhatikan"
     else:
-        kesimpulan = "hal yang positif" if perubahan < 0 else "hal yang perlu diperhatikan"
+        kesimpulan = "hal yang positif" if selisih < 0 else "hal yang perlu diperhatikan"
 
-    return (
+    teks_interpretasi = (
         f"Nilai {kolom} {arah} dari {awal:,.2f} menjadi {akhir:,.2f} "
-        f"selama periode {tahun_awal}–{tahun_akhir}. Kondisi ini merupakan {kesimpulan}."
+        f"selama periode {tahun_awal}–{tahun_akhir}. "
+        f"Kondisi ini merupakan {kesimpulan}."
     )
+
+    with st.expander("🧮 Lihat cara perhitungannya"):
+        st.markdown(f"""
+        **Nilai awal:** {awal:,.2f}  
+        **Nilai akhir:** {akhir:,.2f}
+
+        **Rumus perubahan nilai:**
+
+        \\[
+        \\text{{Perubahan}} = \\text{{Nilai akhir}} - \\text{{Nilai awal}}
+        \\]
+
+        **Perhitungan:**
+
+        \\[
+        {akhir:,.2f} - {awal:,.2f} = {selisih:,.2f}
+        \\]
+
+        **Rumus persentase perubahan:**
+
+        \\[
+        \\text{{Persentase}} = \\frac{{\\text{{Nilai akhir}} - \\text{{Nilai awal}}}}{{\\text{{Nilai awal}}}} \\times 100
+        \\]
+
+        **Perhitungan:**
+
+        \\[
+        \\frac{{{akhir:,.2f} - {awal:,.2f}}}{{{awal:,.2f}}} \\times 100 = {persentase:,.2f}\\%
+        \\]
+
+        **Kesimpulan:**
+
+        {teks_interpretasi}
+        """)
+
+    return teks_interpretasi
 
 # ================= HALAMAN RINGKASAN =================
 if menu == "🏠 Ringkasan Kota Serang":
@@ -170,26 +211,15 @@ if menu == "🏠 Ringkasan Kota Serang":
 
     st.caption(
         f"Angka di atas menunjukkan kondisi Kota Serang pada tahun {tahun_terakhir}. "
-        "Nilai fiskal mengikuti satuan yang digunakan pada dataset."
+        "Nilai mengikuti satuan yang digunakan pada dataset."
     )
 
     st.markdown("#### 🔍 Interpretasi Ringkasan")
 
-    st.success(
-        f"**PAD:** {interpretasi_tren('PAD', arah_naik_baik=True)}"
-    )
-
-    st.info(
-        f"**DAU:** {interpretasi_tren('DAU_Grant', arah_naik_baik=True)}"
-    )
-
-    st.warning(
-        f"**Kemiskinan:** {interpretasi_tren('KEMISKINAN', arah_naik_baik=False)}"
-    )
-
-    st.success(
-        f"**IPM:** {interpretasi_tren('IPM', arah_naik_baik=True)}"
-    )
+    st.success(f"**PAD:** {interpretasi_tren('PAD', arah_naik_baik=True)}")
+    st.info(f"**DAU:** {interpretasi_tren('DAU_Grant', arah_naik_baik=True)}")
+    st.warning(f"**Kemiskinan:** {interpretasi_tren('KEMISKINAN', arah_naik_baik=False)}")
+    st.success(f"**IPM:** {interpretasi_tren('IPM', arah_naik_baik=True)}")
 
     col1, col2 = st.columns(2)
 
@@ -446,9 +476,9 @@ else:
     st.markdown("#### 🔍 Interpretasi Statistik")
 
     st.info(
-        "Tabel statistik menunjukkan gambaran umum setiap indikator pada rentang tahun yang dipilih. "
-        "Rata-rata digunakan untuk melihat nilai umum, sedangkan standar deviasi menunjukkan seberapa besar "
-        "perubahan nilai dari tahun ke tahun."
+        "Rata-rata menunjukkan nilai umum indikator selama periode terpilih. "
+        "Standar deviasi menunjukkan seberapa besar perubahan nilai dari tahun ke tahun: "
+        "semakin besar, semakin fluktuatif; semakin kecil, semakin stabil."
     )
 
     st.markdown("#### 📋 Data Lengkap")
