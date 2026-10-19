@@ -32,7 +32,7 @@ if df_serang.empty:
     st.error("Data Kota Serang tidak ditemukan. Periksa penulisan nama kota pada kolom 'Kota'.")
     st.stop()
 
-# Tampilan CSS
+# CSS tampilan
 st.markdown("""
 <style>
     .block-container {
@@ -56,6 +56,7 @@ st.markdown("""
     .stMetric div {
         color: #0F172A;
         font-weight: 800;
+        font-size: 22px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -92,7 +93,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.info("Dashboard ini menampilkan data khusus Kota Serang.")
+    st.info("Dashboard ini menampilkan data khusus Kota Serang beserta interpretasi hasilnya.")
 
 df_filter = df_serang[
     (df_serang["Tahun"] >= tahun_awal) &
@@ -121,21 +122,74 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# Fungsi interpretasi arah tren
+def interpretasi_tren(kolom, arah_naik_baik=True):
+    nilai = df_filter[kolom].to_numpy()
+
+    if len(nilai) < 2:
+        return "Data belum cukup untuk melihat tren."
+
+    awal = nilai[0]
+    akhir = nilai[-1]
+    perubahan = akhir - awal
+
+    if perubahan > 0:
+        arah = "meningkat"
+    elif perubahan < 0:
+        arah = "menurun"
+    else:
+        arah = "relatif stabil"
+
+    if arah == "relatif stabil":
+        return f"Nilai {kolom} relatif stabil selama periode {tahun_awal}–{tahun_akhir}."
+
+    if arah_naik_baik:
+        kesimpulan = "hal yang positif" if perubahan > 0 else "hal yang perlu diperhatikan"
+    else:
+        kesimpulan = "hal yang positif" if perubahan < 0 else "hal yang perlu diperhatikan"
+
+    return (
+        f"Nilai {kolom} {arah} dari {awal:,.2f} menjadi {akhir:,.2f} "
+        f"selama periode {tahun_awal}–{tahun_akhir}. Kondisi ini merupakan {kesimpulan}."
+    )
+
 # ================= HALAMAN RINGKASAN =================
 if menu == "🏠 Ringkasan Kota Serang":
 
     st.markdown("### 📌 Ringkasan Utama")
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1, col2, col3 = st.columns(3)
+    col4, col5, col6 = st.columns(3)
 
-    col1.metric("💰 PAD", f"{data_terakhir['PAD']:.2f}")
-    col2.metric("🏛️ DAU", f"{data_terakhir['DAU_Grant']:.2f}")
-    col3.metric("🏗️ DAK Fisik", f"{data_terakhir['DAK_Fisik']:.2f}")
-    col4.metric("📉 Kemiskinan", f"{data_terakhir['KEMISKINAN']:.2f}%")
-    col5.metric("👷 Pengangguran", f"{data_terakhir['PENGANGGURAN']:.2f}%")
-    col6.metric("🎓 IPM", f"{data_terakhir['IPM']:.2f}")
+    col1.metric("💰 PAD", f"{data_terakhir['PAD']:,.2f}")
+    col2.metric("🏛️ DAU", f"{data_terakhir['DAU_Grant']:,.2f}")
+    col3.metric("🏗️ DAK Fisik", f"{data_terakhir['DAK_Fisik']:,.2f}")
+    col4.metric("📉 Kemiskinan", f"{data_terakhir['KEMISKINAN']:,.2f}%")
+    col5.metric("👷 Pengangguran", f"{data_terakhir['PENGANGGURAN']:,.2f}%")
+    col6.metric("🎓 IPM", f"{data_terakhir['IPM']:,.2f}")
 
-    st.caption(f"Indikator di atas menunjukkan kondisi Kota Serang pada tahun {tahun_terakhir}.")
+    st.caption(
+        f"Angka di atas menunjukkan kondisi Kota Serang pada tahun {tahun_terakhir}. "
+        "Nilai fiskal mengikuti satuan yang digunakan pada dataset."
+    )
+
+    st.markdown("#### 🔍 Interpretasi Ringkasan")
+
+    st.success(
+        f"**PAD:** {interpretasi_tren('PAD', arah_naik_baik=True)}"
+    )
+
+    st.info(
+        f"**DAU:** {interpretasi_tren('DAU_Grant', arah_naik_baik=True)}"
+    )
+
+    st.warning(
+        f"**Kemiskinan:** {interpretasi_tren('KEMISKINAN', arah_naik_baik=False)}"
+    )
+
+    st.success(
+        f"**IPM:** {interpretasi_tren('IPM', arah_naik_baik=True)}"
+    )
 
     col1, col2 = st.columns(2)
 
@@ -200,6 +254,13 @@ elif menu == "💰 Pendapatan Fiskal":
 
     st.pyplot(fig, use_container_width=True)
 
+    st.markdown("#### 🔍 Interpretasi Pendapatan Fiskal")
+
+    st.success(f"**PAD:** {interpretasi_tren('PAD', arah_naik_baik=True)}")
+    st.info(f"**DAU:** {interpretasi_tren('DAU_Grant', arah_naik_baik=True)}")
+    st.warning(f"**DAK Fisik:** {interpretasi_tren('DAK_Fisik', arah_naik_baik=True)}")
+    st.info(f"**DBH Pajak:** {interpretasi_tren('DBH_PAJAK', arah_naik_baik=True)}")
+
     st.markdown("#### 🏦 Komposisi Dana Transfer")
 
     kolom_transfer = [
@@ -226,13 +287,22 @@ elif menu == "💰 Pendapatan Fiskal":
         ax2.text(
             bar.get_x() + bar.get_width() / 2,
             tinggi,
-            f"{tinggi:.1f}",
+            f"{tinggi:,.1f}",
             ha="center",
             va="bottom",
             fontsize=9
         )
 
     st.pyplot(fig2, use_container_width=True)
+
+    dana_terbesar = nilai_transfer.idxmax()
+    nilai_terbesar = nilai_transfer.max()
+
+    st.success(
+        f"Pada tahun {tahun_terakhir}, sumber dana transfer terbesar adalah **{dana_terbesar}** "
+        f"dengan nilai **{nilai_terbesar:,.2f}**. "
+        "Hal ini menunjukkan komponen dana yang paling dominan dalam pendapatan transfer Kota Serang."
+    )
 
 # ================= HALAMAN BELANJA =================
 elif menu == "🏗️ Belanja Pembangunan":
@@ -281,6 +351,22 @@ elif menu == "🏗️ Belanja Pembangunan":
         ax3.spines["right"].set_visible(False)
 
         st.pyplot(fig3, use_container_width=True)
+
+        st.markdown("#### 🔍 Interpretasi Belanja Pembangunan")
+
+        for kolom in pilihan_belanja:
+            label = kolom.replace("bm_", "").replace("_", " ").title()
+            st.info(f"**{label}:** {interpretasi_tren(kolom, arah_naik_baik=True)}")
+
+        nilai_belanja = data_terakhir[pilihan_belanja].astype(float)
+        belanja_terbesar = nilai_belanja.idxmax()
+        label_terbesar = belanja_terbesar.replace("bm_", "").replace("_", " ").title()
+
+        st.success(
+            f"Pada tahun {tahun_terakhir}, alokasi belanja terbesar adalah **{label_terbesar}** "
+            f"dengan nilai **{nilai_belanja.max():,.2f}**. "
+            "Ini menunjukkan prioritas pembangunan Kota Serang pada bidang tersebut."
+        )
     else:
         st.warning("Pilih minimal satu bidang belanja.")
 
@@ -323,6 +409,13 @@ elif menu == "👥 Kondisi Sosial":
 
         st.pyplot(fig5, use_container_width=True)
 
+    st.markdown("#### 🔍 Interpretasi Kondisi Sosial")
+
+    st.warning(f"**Kemiskinan:** {interpretasi_tren('KEMISKINAN', arah_naik_baik=False)}")
+    st.warning(f"**Pengangguran:** {interpretasi_tren('PENGANGGURAN', arah_naik_baik=False)}")
+    st.info(f"**Ketimpangan:** {interpretasi_tren('KETIMPANGAN', arah_naik_baik=False)}")
+    st.success(f"**IPM:** {interpretasi_tren('IPM', arah_naik_baik=True)}")
+
 # ================= HALAMAN DATA =================
 else:
 
@@ -350,8 +443,19 @@ else:
     st.markdown("#### 🧮 Statistik Deskriptif")
     st.dataframe(pd.DataFrame(statistik), use_container_width=True, hide_index=True)
 
+    st.markdown("#### 🔍 Interpretasi Statistik")
+
+    st.info(
+        "Tabel statistik menunjukkan gambaran umum setiap indikator pada rentang tahun yang dipilih. "
+        "Rata-rata digunakan untuk melihat nilai umum, sedangkan standar deviasi menunjukkan seberapa besar "
+        "perubahan nilai dari tahun ke tahun."
+    )
+
     st.markdown("#### 📋 Data Lengkap")
     st.dataframe(df_filter, use_container_width=True)
 
 st.divider()
-st.caption("Sumber data: dataset_fiskal_97_hipoFull.csv dari GitHub JUMRA-id/Dashboard-Kota-Serang. Dibuat menggunakan Streamlit, Pandas, NumPy, dan Matplotlib.")
+st.caption(
+    "Sumber data: dataset_fiskal_97_hipoFull.csv dari GitHub JUMRA-id/Dashboard-Kota-Serang. "
+    "Dibuat menggunakan Streamlit, Pandas, NumPy, dan Matplotlib."
+)
